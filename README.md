@@ -1,7 +1,10 @@
 # json
 cJSON的API封装， 以及cJson源码分析， 解决个别中文乱码无法解析的问题
+
 1、源码：cJSON.c
+
 2、API封装: cJSON_API.c
+
 3、解决乱码的问题在cJSON.c源码中实现
 
 
