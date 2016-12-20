@@ -15,9 +15,12 @@
 #define KEY_ERROR     9601              /*获取key值失败*/
 #define ROOT_ERROR    9602              /*获取json root失败*/
 #define OBJECT_ERROR  9603              /*获取对象失败*/
-#define JSON_ERROR    9604
-#define ARRAY_ERROR   9605
+#define JSON_ERROR    9604              /*json格式有误*/
 
+
+extern cJSON *StrToJsonObject(char *str);
+
+extern int GetStrFromJson(cJSON *root, char *key, char *GetStr);
 
 extern int GetIntFromJson1(char *JsonStr, char *key, int *iNum);
 

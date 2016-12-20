@@ -49,8 +49,8 @@ extern "C"
 
 /* The cJSON structure: */
 typedef struct cJSON {
-	struct cJSON *next,*prev;	/* 同一级别的元素使用双向链表存储 */
-	struct cJSON *child;		/* 如果是 object 或者 array 的话, child存放下一个级别的元素*/
+	struct cJSON *next,*prev;	/* next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem */
+	struct cJSON *child;		/* An array or object item will have a child pointer pointing to a chain of the items in the array/object. */
 
 	int type;					/* The type of the item, as above. */
 
@@ -61,7 +61,6 @@ typedef struct cJSON {
 	char *string;				/* The item's name string, if this item is the child of, or is in the list of subitems of an object. */
 } cJSON;
 
-/*Json 内存管理 Hook技术,  用户自定义malloc 和 free*/
 typedef struct cJSON_Hooks {
       void *(*malloc_fn)(size_t sz);
       void (*free_fn)(void *ptr);

@@ -31,27 +31,26 @@
 #include <limits.h>
 #include <ctype.h>
 #include "cJSON.h"
-#include "cJsonHead.h"
 #include "strings.h"
 
 
-//16进制字符串转换为10进制数
-long  HexStrToDec(char *s)
+//16进制字符串转换为10进制数 
+long  HexStrToDec(char *str) 
 {
     int i,t;
     long iNum=0;
-    for(i=0;s[i];i++)
-    {
-        if(s[i]<='9')t=s[i]-'0';
+    for(i=0;str[i];i++)
+    {   
+        if(str[i]<='9')t=str[i]-'0';
         else  
-        {
-            if(s[i] >= 'a')
-                t=s[i]-'a'+10;
+        {   
+            if(str[i] >= 'a')
+                t=str[i]-'a'+10;
             else
-                t=s[i]-'A'+10;
-        }
+                t=str[i]-'A'+10;
+        }   
         iNum=iNum*16+t;
-    }
+    }   
     return iNum;
 }
 
@@ -124,7 +123,7 @@ static const char *parse_number(cJSON *item,const char *num)
 	if (*num=='0') num++;			/* is zero */
 	if (*num>='1' && *num<='9')	do	n=(n*10.0)+(*num++ -'0');	while (*num>='0' && *num<='9');	/* Number? */
 	if (*num=='.' && num[1]>='0' && num[1]<='9') {num++;		do	n=(n*10.0)+(*num++ -'0'),scale--; while (*num>='0' && *num<='9');}	/* Fractional part? */
-	if (*num=='e' || *num=='E')		/* Exponent? */
+	if (*num=='e' || *num=='E')		/* Exponent?  判断是否为指数类型*/
 	{	num++;if (*num=='+') num++;	else if (*num=='-') signsubscale=-1,num++;		/* With sign? */
 		while (*num>='0' && *num<='9') subscale=(subscale*10)+(*num++ - '0');	/* Number? */
 	}
@@ -210,76 +209,61 @@ static unsigned parse_hex4(const char *str)
 	return h;
 }
 
-/* Parse the input text into an unescaped cstring, and populate item. */
-static const unsigned char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
+/* Parse the input text into an unescaped cstring, and populate item. 将输入的文本分析到非转义cstring并填充item,目前不了解这里是什么情况*/
+static const unsigned char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };   //16进制数组
 static const char *parse_string(cJSON *item,const char *str)
 {
 	const char *ptr=str+1;char *ptr2;char *out;int len=0;unsigned uc,uc2;
     char lbuf[3];
-	if (*str!='\"') {ep=str;return 0;}	/* not a string! */
+	if (*str!='\"') {ep=str; return 0;}	/* not a string! */
 	
-	while (*ptr!='\"' && *ptr && ++len) if (*ptr++ == '\\') ptr++;	/* Skip escaped quotes. */
+	while (*ptr!='\"' && *ptr && ++len) if (*ptr++ == '\\') ptr++;	/* Skip escaped quotes. 此处指针指向key值的最后一个字符*/
 	
-	out=(char*)cJSON_malloc(len+1);	/* This is how long we need for the string, roughly. */
+	out=(char*)cJSON_malloc(len+1);	/* This is how long we need for the string, roughly....申请相应大小的内存空间 */
 	if (!out) return 0;
 	
-    ELOG(INFO, "111111111111");
 	ptr=str+1;ptr2=out;
 	while (*ptr!='\"' && *ptr)
 	{
+        /*解决gbk码含有 0x5C 的汉字乱码无法解析的问题*/
         memset(lbuf, 0x00, sizeof(lbuf));
-        binToStr(ptr, lbuf, 1);    //二进制转16进制串 在libttsys.a静态库中
+        binToStr(ptr, lbuf, 1);
         long iBuf = HexStrToDec(lbuf);
-        ELOG(INFO, "*ptr: %c ,lbuf: %s, iBuf: %d",*ptr ,lbuf, iBuf);
-
-#if 1
         if(iBuf > 127)
         {
-            ELOG(INFO, "解决含有GBK码 0x5C 的汉字解析不了的问题");
             *ptr2++=*ptr++;
             *ptr2++=*ptr++;
             continue;
         }
-#endif
-		if (*ptr!='\\') 
-        {
-            ELOG(INFO,"xxxxxxxxxxxxxxxxx");
-            *ptr2++=*ptr++;
-        }
+        /*end*/
+
+		if (*ptr!='\\') *ptr2++=*ptr++;
 		else
 		{
-            ELOG(INFO, "2222222222222");
 			ptr++;
-            memset(lbuf, 0x00, sizeof(lbuf));
-            binToStr(ptr, lbuf, 1);
-            ELOG(INFO, "*ptr: %c ,lbuf: %s",*ptr ,lbuf);
 			switch (*ptr)
 			{
-				case 'b': *ptr2++='\b';	ELOG(INFO, "bbbbbbbbbbbbbbbbbbb");break;
-				case 'f': *ptr2++='\f'; ELOG(INFO, "fffffffffffffffffff");break;
-				case 'n': *ptr2++='\n';	ELOG(INFO, "nnnnnnnnnnnnnnnnnnn");break;
-				case 'r': *ptr2++='\r';	ELOG(INFO, "rrrrrrrrrrrrrrrrrrr");break;
-				case 't': *ptr2++='\t';	ELOG(INFO, "ttttttttttttttttttt");break;
+				case 'b': *ptr2++='\b';	break;
+				case 'f': *ptr2++='\f';	break;
+				case 'n': *ptr2++='\n';	break;
+				case 'r': *ptr2++='\r';	break;
+				case 't': *ptr2++='\t';	break;
 				case 'u':	 /* transcode utf16 to utf8. */
 					uc=parse_hex4(ptr+1);ptr+=4;	/* get the unicode char. */
 
-                    ELOG(INFO, "33333333333333");
 					if ((uc>=0xDC00 && uc<=0xDFFF) || uc==0)	break;	/* check for invalid.	*/
 
 					if (uc>=0xD800 && uc<=0xDBFF)	/* UTF16 surrogate pairs.	*/
 					{
-                        ELOG(INFO, "44444444444444444");
 						if (ptr[1]!='\\' || ptr[2]!='u')	break;	/* missing second-half of surrogate.	*/
 						uc2=parse_hex4(ptr+3);ptr+=6;
 						if (uc2<0xDC00 || uc2>0xDFFF)		break;	/* invalid second-half of surrogate.	*/
 						uc=0x10000 + (((uc&0x3FF)<<10) | (uc2&0x3FF));
 					}
-                    
+
 					len=4;if (uc<0x80) len=1;else if (uc<0x800) len=2;else if (uc<0x10000) len=3; ptr2+=len;
 					
-                    ELOG(INFO, "55555555555555555555555");
 					switch (len) {
-                        ELOG(INFO, "666666666666666666666666666");
 						case 4: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
 						case 3: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
 						case 2: *--ptr2 =((uc | 0x80) & 0xBF); uc >>= 6;
@@ -293,13 +277,10 @@ static const char *parse_string(cJSON *item,const char *str)
 		}
 	}
 	*ptr2=0;
-    ELOG(INFO, "*ptr: %c", *ptr); 
 	if (*ptr=='\"') ptr++;
 	item->valuestring=out;
-    ELOG(INFO, "valuestring: %s", out);
 	item->type=cJSON_String;
-    ELOG(INFO, "*ptr: %c", *ptr);
-	return ptr;      //ptr应该指向" 号的后一个字符
+	return ptr;
 }
 
 /* Render the cstring provided to an escaped version that can be printed. */
@@ -370,8 +351,13 @@ static char *print_array(cJSON *item,int depth,int fmt,printbuffer *p);
 static const char *parse_object(cJSON *item,const char *value);
 static char *print_object(cJSON *item,int depth,int fmt,printbuffer *p);
 
-/* Utility to jump whitespace and cr/lf */
-static const char *skip(const char *in) {while (in && *in && (unsigned char)*in<=32) in++; return in;}
+/* 跳过不可见字符 因为不可见字符都是小于等于32的*/
+static const char *skip(const char *in) 
+{
+    while (in && *in && (unsigned char)*in<=32) 
+         in++; 
+    return in;
+}
 
 /* Parse an object - create a new root, and populate. */
 cJSON *cJSON_ParseWithOpts(const char *value,const char **return_parse_end,int require_null_terminated)
@@ -389,7 +375,7 @@ cJSON *cJSON_ParseWithOpts(const char *value,const char **return_parse_end,int r
 	if (return_parse_end) *return_parse_end=end;
 	return c;
 }
-/* Default options for cJSON_Parse */
+/* 将Json字符串转换为 JSON结构体对象 */
 cJSON *cJSON_Parse(const char *value) {return cJSON_ParseWithOpts(value,0,0);}
 
 /* Render a cJSON item/entity/structure to text. */
@@ -410,7 +396,6 @@ char *cJSON_PrintBuffered(cJSON *item,int prebuffer,int fmt)
 /* Parser core - when encountering text, process appropriately. */
 static const char *parse_value(cJSON *item,const char *value)
 {
-    ELOG(INFO, "value: %s", value);
 	if (!value)						return 0;	/* Fail on null. */
 	if (!strncmp(value,"null",4))	{ item->type=cJSON_NULL;  return value+4; }
 	if (!strncmp(value,"false",5))	{ item->type=cJSON_False; return value+5; }
@@ -418,7 +403,7 @@ static const char *parse_value(cJSON *item,const char *value)
 	if (*value=='\"')				{ return parse_string(item,value); }
 	if (*value=='-' || (*value>='0' && *value<='9'))	{ return parse_number(item,value); }
 	if (*value=='[')				{ return parse_array(item,value); }
-	if (*value=='{')				{ return parse_object(item,value); }
+	if (*value=='{')				{ return parse_object(item,value); }    //parse_object函数循环执行到json末尾 '}'
 
 	ep=value;return 0;	/* failure. */
 }
@@ -457,7 +442,7 @@ static char *print_value(cJSON *item,int depth,int fmt,printbuffer *p)
 	return out;
 }
 
-/* Build an array from input text. */
+/* Build an array from input text. 从输入文本中构建数组*/
 static const char *parse_array(cJSON *item,const char *value)
 {
 	cJSON *child;
@@ -572,32 +557,28 @@ static const char *parse_object(cJSON *item,const char *value)
 	if (*value!='{')	{ep=value;return 0;}	/* not an object! */
 	
 	item->type=cJSON_Object;
-	value=skip(value+1);
+	value=skip(value+1);    //去除字符串头的不可见字符
 	if (*value=='}') return value+1;	/* empty array. */
 	
 	item->child=child=cJSON_New_Item();
 	if (!item->child) return 0;
 	value=skip(parse_string(child,skip(value)));
 	if (!value) return 0;
-	child->string=child->valuestring;child->valuestring=0;
+	child->string=child->valuestring;child->valuestring=0;   //key值字符串放到string, valuestring清空等待存放value字符串
 	if (*value!=':') {ep=value;return 0;}	/* fail! */
-	value=skip(parse_value(child,skip(value+1)));	/* skip any spacing, get the value. */
+	value=skip(parse_value(child,skip(value+1)));/*再次去检查参数, 会执行if(*value = ?), 再去解析参数, 有可能是'{', '[', 数字等*/
 	if (!value) return 0;
-    ELOG(INFO, "7777777777777777777");
-
-    ELOG(INFO, "value: %s", value);
-    ELOG(INFO, "*value: %c", *value);
+	
 	while (*value==',')
 	{
-        ELOG(INFO, "88888888888888888888888");
 		cJSON *new_item;
-		if (!(new_item=cJSON_New_Item()))	return 0; /* memory fail */
-		child->next=new_item;new_item->prev=child;child=new_item;
+		if (!(new_item=cJSON_New_Item()))	return 0; /* memory fail 再申请内存空间存放新的节点*/
+		child->next=new_item;new_item->prev=child;child=new_item;   //child指针指向新的节点
 		value=skip(parse_string(child,skip(value+1)));
 		if (!value) return 0;
 		child->string=child->valuestring;child->valuestring=0;
 		if (*value!=':') {ep=value;return 0;}	/* fail! */
-		value=skip(parse_value(child,skip(value+1)));	/* skip any spacing, get the value. */
+		value=skip(parse_value(child,skip(value+1)));	/* 如果是多级JSON格式，此处还会找到if(*value='{'*/
 		if (!value) return 0;
 	}
 	

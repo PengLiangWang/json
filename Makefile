@@ -10,7 +10,7 @@ LIB_FILE=libcjson.a
 LIBS= $(LIBDIR)/libttsys.a -ldl -lm
 
 EXEC=cjson
-PROBJ=cJSON.o cJSON_API.o cjson_test.o
+PROBJ=cJSON.o cJSON_API.o cjson_test2.o
 PROBJ1=cJSON.o cJSON_API.o
 
 all: $(EXEC)

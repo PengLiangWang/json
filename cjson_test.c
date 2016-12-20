@@ -1,4 +1,5 @@
 #include "cJsonHead.h"
+#include <iconv.h>
 
 void GetObjectParse1(char *out)
 {
@@ -395,7 +396,6 @@ void create_object4()
      out = cJSON_Print(root);
      printf("\n\n %s\n", out);
      GetObjectParse4(out);
-     
      cJSON_Delete(root);	
      free(out);
 }
@@ -426,11 +426,31 @@ void create_object5()
 
 int main (int argc, const char * argv[]) {
 
-	char text1[]=" {\n\"name\": \"Jack\", \n\"type\":       \"rect\", \n\"width\":      1, \n\"height\":     1080, \n\"interlace\":  true,\"frame rate\": 24\n}";	
+	char text1[]="{\n\"name\": \"万朋\",\n\"type\":       \"rect\", \n\"width\":      1, \n\"height\":     1080, \n\"interlace\":  true,\"frame rate\": 24\n}";	
 	char text2[]="{\n\"format\": {\"type\":       \"rect\", \n\"width\":      1920, \n\"height\":     1080, \n\"interlace\":  true,\"frame rate\": 24\n}\n}";	
 //	char text3[]="{\n\"name\": \"Jack\", \n\"format\": {\"type\":       \"rect\", \n\"width\":      1920, \n\"height\":     1080, \n\"interlace\":  true,\"frame rate\": 24\n}\n}";	
 
     char text4[]="{\"MSG_CODE\":\"0000\",\"MSG_TEXT\":\"操作成功\",\"RESULTPARAM\":{\"Result\":\"1\",\"PayManagerFee\":0,\"ActualManagerFee\":0,\"ActualPounDateFee\":200,\"ActualPayFee\":0,\"PayFee\":500000,\"SettleFlag\":\"2\",\"PayPounDateFee\":1875}}";
+
+    char text5[]="{\"BRANCHID\":\"00800075\",\"PARENTCUS\":\"A000014676\",\"PARENTMOB\":\"13651999517\",\"TYPE\":\"3\",\"CUSTOMERID\":\"A000244877\",\"USERID\":\"13162328493\"}";
+    int res = 0;
+
+    /*字符串GBK转化为UTF-8*/
+    /*
+    int inlen = strlen(text1);
+    iconv_t cd = iconv_open("UTF-8", "GBK");
+     
+    char *outbuf=(char *)malloc(inlen*4);
+    bzero(outbuf, inlen*4);
+    char *in= text1;
+    char *out=outbuf;
+
+    size_t outlen = inlen*4;
+    iconv(cd,&in,(size_t*)&inlen,&out,&outlen);
+    outlen=strlen(outbuf);
+    printf("%s\n",outbuf);
+    free(outbuf);
+    iconv_close(cd);
 
 
     ELOG(INFO,"\n************* 一层json解析 ***********\n");
@@ -438,26 +458,27 @@ int main (int argc, const char * argv[]) {
     char name[100] = {0};
     char *namekey = "name";
     int res = 0;
-    printf("text1:%s\n", text1);
    
-    res = GetStrFromJson1(text1, namekey, name);
+    printf("text1: %s\n", text1);
+    res = GetStrFromJson1(outbuf, namekey, name);
     if(res)
     {
-       printf("Get key %s error, ERR: %d\n", namekey, res);
+       ELOG(ERROR, "获取key %s 失败. ERR: %d\n", namekey, res);    //打印日志到log中
        return -1;
     }
-    printf("%s: %s\n",namekey,  name);
-
-/*
-    printf("\n*************cjson 2  带数组***********\n");
-    create_object2();
-
-    printf("\n*************cjson 4  带数组***********\n");
-    create_object4();
+    ELOG(INFO, "%s: %s\n",namekey,  name);
 */
+    char typevalue[3] = {0};
+    res = GetStrFromJson1(text5, "TYPE", typevalue);
+    if(res)
+    {
+       ELOG(ERROR, "获取key %s 失败. ERR: %d\n", "TYPE", res);    //打印日志到log中
+       return -1;
+    }
+    ELOG(INFO, "%s: %s\n", "TYPE" ,typevalue);
 
-/*
 
+#if 0
     int cwidth = 0;
     char *cwidthkey = "width";
 
@@ -513,7 +534,7 @@ int main (int argc, const char * argv[]) {
         ELOG(ERROR,"获取key %s 失败.", interkey);
     }
     ELOG(INFO,"interlace :  %d\n\n\n", inter);
-
+#endif
 
 #if 0
     printf("\n*************cjson 1***********\n");
@@ -534,6 +555,5 @@ int main (int argc, const char * argv[]) {
      
 	dofile("./tests/test5");
 #endif	
-*/
 	return 0;
 }
